@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=78.1.1", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aws-wrangler-demos"
+version = "0.3.0"
+description = "BEFORE/AFTER examples demonstrating AWS SDK for Pandas (awswrangler) vs boto3"
+requires-python = "==3.11.*"
+dependencies = [
+    "awswrangler",
+    "boto3",
+    "jaconv",
+    "openpyxl",
+    "pip-audit",
+    "requests",
+    "setuptools>=78.1.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "awscli==1.42.1",  # Not recommended for production
+]
+database = [
+    "awswrangler[redshift]",
+    "awswrangler[mysql]",
+    "awswrangler[postgres]",
+    "awswrangler[oracle]",
+    "awswrangler[sqlserver]",
+]
+extras = [
+    "awswrangler[opensearch]",
+    "awswrangler[deltalake]",
+]
+
+[tool.pip-tools]
+generate-hashes = true

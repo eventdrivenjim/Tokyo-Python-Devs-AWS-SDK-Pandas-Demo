@@ -35,16 +35,22 @@ ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
 # Set working directory to /app - standard location for application code
 WORKDIR /app
 
-# Copy application files (filtered by .dockerignore to exclude unnecessary files)
-# .dockerignore prevents copying build artifacts, cache files, and secrets
-COPY . . 
+# Copy dependency files first for better Docker layer caching
+COPY pyproject.toml .
+COPY uv.lock . 
 
 # Install packages using uv (ultra-fast Python package installer)
-# uv is much faster than pip and has better dependency resolution
-# Install wheel first for faster package builds, then our requirements
-RUN pip3 install uv && uv pip install wheel \
-    && uv pip install -r requirements.txt \
-    && rm requirements.txt
+# Extract and install dependencies directly without building project
+# We run as separate for debugging - image size is not a concern in the builder
+RUN pip3 install uv 
+RUN uv export --format requirements-txt > requirements.txt
+RUN uv pip install wheel
+RUN uv pip install -r requirements.txt
+RUN rm -rf *.egg-info/ pyproject.toml uv.lock requirements.txt
+
+# Copy application files (filtered by .dockerignore to exclude unnecessary files)
+# .dockerignore prevents copying build artifacts, cache files, and secrets
+COPY demos/ .
 
 # Pre-compile our python packages to speed up initial hit
 # and that the final image is read-only
@@ -52,15 +58,6 @@ RUN pip3 install uv && uv pip install wheel \
 # we do both our app and included packages
 RUN python -m compileall -q . && \
     python -m compileall -q ${VIRTUAL_ENV}/lib/python${DOCKER_PYTHON_VERSION}/site-packages
-
-
-# Install unzip in builder stage for AWS CLI extraction
-# This keeps the final image minimal by not including build-time tools
-RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get install -y unzip && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* 
 
 # FINAL STAGE: Create minimal runtime container
 # slim-bookworm = Debian 12 (Bookworm) with minimal packages for smaller, more secure image

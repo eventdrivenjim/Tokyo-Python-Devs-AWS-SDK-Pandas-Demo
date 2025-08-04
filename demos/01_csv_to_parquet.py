@@ -2,7 +2,7 @@
 
 # Configuration - set these environment variables before running
 import os
-S3_BUCKET_NAME = os.environ.get('S3_BUCKET_NAME', 'my-bucket')
+S3_BUCKET_NAME = os.environ.get('S3_BUCKET_NAME', 'demo-bucket-changeme')
 GLUE_DATABASE_NAME = os.environ.get('GLUE_DATABASE_NAME', 'movielens')
 
 # --- BEFORE ---

@@ -18,7 +18,7 @@ ENV = \
 
 VOLUMES= \
   -v $(HOME)/.aws:/root/.aws:ro \
-  -v $(PWD):/app:ro
+  -v $(PWD):/app
 
 
 
@@ -26,10 +26,9 @@ VOLUMES= \
 
 
 build:
-	$(CONTAINER_ENGINE) build --no-cache -t $(NS)/$(REPO):$(VERSION) ./demos
+	$(CONTAINER_ENGINE) build --no-cache -t $(NS)/$(REPO):$(VERSION) .
 
 shell: build
-	source .env
 	$(CONTAINER_ENGINE) run --rm --name $(NAME)-$(INSTANCE) -i -t $(PORTS) $(VOLUMES) $(ENV) $(NS)/$(REPO):$(VERSION) /bin/bash
 
 inspect: build

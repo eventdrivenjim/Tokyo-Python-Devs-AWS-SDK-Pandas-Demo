@@ -2,13 +2,17 @@
 
 # Configuration - set these environment variables before running
 import os
-S3_BUCKET_NAME = os.environ.get('S3_BUCKET_NAME', 'my-bucket')
+S3_BUCKET_NAME = os.environ.get('S3_BUCKET_NAME', 'demo-bucket-changeme')
 DYNAMODB_TABLE_NAME = os.environ.get('DYNAMODB_TABLE_NAME', 'movies')
 
 # --- BEFORE ---
 # BEFORE: Read CSV and write to DynamoDB with boto3
 import pandas as pd
 import boto3
+
+# Initialize DynamoDB resource and table
+dynamodb = boto3.resource("dynamodb")
+table = dynamodb.Table(DYNAMODB_TABLE_NAME)
 
 # Read movies CSV from S3 and limit to first 1000 rows
 df = pd.read_csv(f"s3://{S3_BUCKET_NAME}/movies.csv").head(1000)
@@ -17,9 +21,6 @@ df = pd.read_csv(f"s3://{S3_BUCKET_NAME}/movies.csv").head(1000)
 df['year'] = df['title'].str.extract(r'\((\d{4})\)')
 df['title'] = df['title'].str.replace(r'\s*\(\d{4}\).*$', '', regex=True)
 
-# Initialize DynamoDB resource and table
-dynamodb = boto3.resource("dynamodb")
-table = dynamodb.Table(DYNAMODB_TABLE_NAME)
 
 # Write to DynamoDB using batch operations with error handling
 # DynamoDB batch_write_item has a 25-item limit per request

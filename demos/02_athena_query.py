@@ -3,7 +3,7 @@
 # Configuration - set these environment variables before running
 import os
 GLUE_DATABASE_NAME = os.environ.get('GLUE_DATABASE_NAME', 'movielens')
-ATHENA_RESULT_LOCATION = os.environ.get('ATHENA_RESULT_LOCATION', 's3://my-bucket/athena-results/')
+ATHENA_RESULT_LOCATION = os.environ.get('ATHENA_RESULT_LOCATION')
 
 # --- BEFORE ---
 # BEFORE: Athena query with boto3
