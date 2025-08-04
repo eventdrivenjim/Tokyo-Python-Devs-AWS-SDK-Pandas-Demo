@@ -494,21 +494,21 @@ aws cloudformation list-stacks --stack-status-filter CREATE_COMPLETE UPDATE_COMP
 
 ```
 aws-wrangler-demos/
-├── demos/                    # Demo Python scripts and container files
+├── demos/                        # Demo Python scripts and container files
 │   ├── 01_csv_to_parquet.py
 │   ├── 02_athena_query.py
 │   ├── 03_excel_to_glue.py
 │   ├── 04_dynamodb_write.py
 │   ├── 05_dynamodb_lookup.py
 │   ├── Dockerfile
-│   ├── .dockerignore        # Docker build context exclusions
-│   ├── requirements.txt     # Python dependencies (compiled)
-│   └── requirements.in      # Python dependencies (source)
-├── .env                     # Environment variables configuration
-├── .gitignore              # Git ignore rules
+│   ├── .dockerignore             # Docker build context exclusions
+│   ├── requirements.txt          # Python dependencies (compiled)
+│   └── requirements.in           # Python dependencies (source)
+├── .env                          # Environment variables configuration
+├── .gitignore                    # Git ignore rules
 ├── cloudformation_template.yaml  # AWS infrastructure template
-├── makefile                # Container management commands
-└── README.md              # This documentation
+├── makefile                      # Container management commands
+└── README.md                     # This documentation
 ```
 
 **Key directories:**
@@ -530,7 +530,7 @@ aws-wrangler-demos/
 - **BEFORE:** Manual text standardization, partitioning, and Glue registration
 - **AFTER:** Streamlined processing with automatic Glue integration
 
-### 05_dynamodb_write.py
+### 04_dynamodb_write.py
 **Purpose:** Write DataFrame to DynamoDB table
 - **BEFORE:** Manual batch operations with error handling
 - **AFTER:** Direct DataFrame to DynamoDB conversion
