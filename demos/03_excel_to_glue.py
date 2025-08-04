@@ -10,6 +10,11 @@ GLUE_DATABASE_NAME = os.environ.get('GLUE_DATABASE_NAME', 'company')
 import pandas as pd
 import jaconv
 import boto3
+import logging
+
+# Configure logging for BEFORE section
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Read Excel file with Japanese text data
 df = pd.read_excel("employees.xlsx")
@@ -47,6 +52,11 @@ glue.create_table(
 import pandas as pd
 import jaconv
 import awswrangler as wr
+import logging
+
+# Configure logging for AFTER section
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Read Excel file with Japanese text data
 df = pd.read_excel("employees.xlsx")
