@@ -1,0 +1,179 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'AWS resources for AWS SDK for Pandas (Wrangler) demos'
+
+# Template creates the foundational AWS resources needed for the demos:
+# - S3 bucket for data storage (CSV, Parquet files)
+# - DynamoDB table for NoSQL data operations
+# - Glue database for data catalog and Athena queries
+
+Parameters:
+  # S3 bucket name - must be globally unique across all AWS accounts!
+  BucketName:
+    Type: String
+    Description: 'S3 bucket name (must be globally unique)'
+    AllowedPattern: '^[a-z0-9][a-z0-9-]*[a-z0-9]$'
+    ConstraintDescription: 'Bucket name must be lowercase, contain only letters, numbers, and hyphens'
+    MinLength: 3
+    MaxLength: 63
+  
+  # DynamoDB table name for storing movie data
+  TableName:
+    Type: String
+    Description: 'DynamoDB table name for movies data'
+    Default: 'movies'
+    AllowedPattern: '^[a-zA-Z0-9_.-]+$'
+    ConstraintDescription: 'Table name must contain only letters, numbers, underscores, periods, and hyphens'
+    MinLength: 3
+    MaxLength: 255
+  
+  # Environment for resource naming and tagging
+  Environment:
+    Type: String
+    Description: 'Environment name for resource suffix'
+    Default: 'demo'
+    AllowedValues: ['dev', 'test', 'prod', 'demo']
+    ConstraintDescription: 'Must be one of: dev, test, prod, demo'
+  
+
+Resources:
+  # S3 Bucket for storing CSV files, Parquet datasets, and Athena query results
+  DataBucket:
+    Type: AWS::S3::Bucket
+    # Delete bucket on stack deletion for demo cleanup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      BucketName: !Sub '${BucketName}-${Environment}'
+      # Security: Block all public access to prevent accidental data exposure
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      # Enable versioning for data protection and recovery
+      VersioningConfiguration:
+        Status: Enabled
+      # Lifecycle rules to automatically delete objects after 30 days to reduce costs
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldObjects
+            Status: Enabled
+            ExpirationInDays: 30
+            NoncurrentVersionExpirationInDays: 7
+      # Encrypt all objects at rest using AES-256 with S3-managed keys (SSE-S3)
+      # AWS manages the encryption keys automatically - no customer key management required
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      # Ensure bucket owner owns all objects in the bucket
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      # Tag bucket for project identification and cost tracking
+      Tags:
+        - Key: Project
+          Value: 'AWS-Wrangler-Demos'
+        - Key: CostCenter
+          Value: 'Demo-Training'
+        - Key: Environment
+          Value: !Ref Environment
+
+
+  # Bucket policy to enforce HTTPS-only access for security
+  # Denies all requests that don't use encrypted transport (HTTPS)
+  DataBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref DataBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: DenyInsecureConnections
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            # Apply to both bucket and all objects within it
+            Resource:
+              - !Sub '${DataBucket}/*'
+              - !Ref DataBucket
+            # Only deny when SecureTransport is false (HTTP instead of HTTPS)
+            Condition:
+              Bool:
+                'aws:SecureTransport': 'false'
+
+  # DynamoDB table for storing movie data with movieId as primary key
+  MoviesTable:
+    Type: AWS::DynamoDB::Table
+    # Delete table on stack deletion for demo cleanup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      TableName: !Sub '${TableName}-${Environment}'
+      # Pay-per-request billing - no need to provision capacity
+      BillingMode: PAY_PER_REQUEST
+      # Define movieId as a String attribute
+      AttributeDefinitions:
+        - AttributeName: movieId
+          AttributeType: S
+      # movieId is the partition key (primary key)
+      KeySchema:
+        - AttributeName: movieId
+          KeyType: HASH
+      # Enable point-in-time recovery for data protection
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      # Tag table for project identification and cost tracking
+      Tags:
+        - Key: Project
+          Value: 'AWS-Wrangler-Demos'
+        - Key: CostCenter
+          Value: 'Demo-Training'
+        - Key: Environment
+          Value: !Ref Environment
+
+  # Glue database for data catalog - stores table metadata for Athena queries
+  # The demos will create tables within this database
+  GlueDatabase:
+    Type: AWS::Glue::Database
+    # Delete database when stack is deleted (safe since it only contains metadata)
+    DeletionPolicy: Delete
+    Properties:
+      # Use current AWS account's data catalog
+      CatalogId: !Ref AWS::AccountId
+      DatabaseInput:
+        Name: !Sub 'movielens-${Environment}'
+        Description: 'Database for MovieLens dataset demos'
+      # Note: Glue Database doesn't support tags directly in CloudFormation
+      # Tags would need to be applied via AWS CLI or console after creation
+
+# Outputs provide resource names and locations for use in demos
+# Exported values can be imported by other CloudFormation stacks
+Outputs:
+  # S3 bucket name for uploading CSV files and storing Parquet datasets
+  BucketName:
+    Description: 'S3 bucket name for data storage'
+    Value: !Ref DataBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-BucketName'
+  
+  # DynamoDB table name for NoSQL operations
+  TableName:
+    Description: 'DynamoDB table name for movies data'
+    Value: !Ref MoviesTable
+    Export:
+      Name: !Sub '${AWS::StackName}-TableName'
+  
+  # Glue database name for registering tables and Athena queries
+  GlueDatabaseName:
+    Description: 'Glue database name for data catalog'
+    Value: !Sub 'movielens-${Environment}'
+    Export:
+      Name: !Sub '${AWS::StackName}-GlueDatabaseName'
+  
+  # S3 path where Athena will store query results
+  AthenaResultLocation:
+    Description: 'S3 location for Athena query results'
+    Value: !Sub 's3://${DataBucket}/athena-results/'
+    Export:
+      Name: !Sub '${AWS::StackName}-AthenaResultLocation'
