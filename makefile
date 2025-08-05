@@ -41,7 +41,6 @@ VOLUMES= \
 # Default target - show help
 .DEFAULT_GOAL := help
 
-
 # Build image with configurable dev dependencies
 # Override with: make build INCLUDE_DEV_DEPS=false
 build:

@@ -1,25 +1,17 @@
-# BEFORE and AFTER example using AWS SDK for Pandas
-
-# Configuration - set these environment variables before running
-import os
-import logging
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-GLUE_DATABASE_NAME = os.environ.get('GLUE_DATABASE_NAME', 'movielens')
-ATHENA_RESULT_LOCATION = os.environ.get('ATHENA_RESULT_LOCATION')
-
-# --- BEFORE ---
 # BEFORE: Athena query with boto3
 import boto3
 import time
 import pandas as pd
 import logging
+import os
 
 # Configure logging for BEFORE section
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Environment variables
+GLUE_DATABASE_NAME = os.environ.get('GLUE_DATABASE_NAME', 'movielens')
+ATHENA_RESULT_LOCATION = os.environ.get('ATHENA_RESULT_LOCATION')
 
 # Initialize Athena client and start query execution
 athena = boto3.client("athena")
@@ -45,20 +37,4 @@ if state == "SUCCEEDED":
 else:
     logger.info(f"Query failed with state: {state}")
 
-# --- AFTER ---
-# AFTER: Query Athena with awswrangler
-import awswrangler as wr
-import logging
-from datetime import datetime
-
-# Configure logging for AFTER section
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# Example 1: Original query - movies from 1995
-# Matches the BEFORE example for direct comparison
-df_1995 = wr.athena.read_sql_query(
-    sql="SELECT title, genres FROM movies WHERE release_year = '1995'",
-    database=GLUE_DATABASE_NAME
-)
-
+print(df.head(10))
