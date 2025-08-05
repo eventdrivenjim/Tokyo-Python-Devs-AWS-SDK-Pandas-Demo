@@ -1,57 +1,70 @@
 # BEFORE and AFTER example using AWS SDK for Pandas
 
-# Configuration - set these environment variables before running
-import os
+# --- BEFORE ---
+# BEFORE: Manual individual DynamoDB writes with complex type conversion
+import pandas as pd
+import boto3
+import time
 import logging
+import os
+from botocore.exceptions import ClientError
 
-# Configure logging
+# Configure logging for BEFORE section
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Environment variables
 S3_BUCKET_NAME = os.environ.get('S3_BUCKET_NAME', 'demo-bucket-changeme')
 DYNAMODB_TABLE_NAME = os.environ.get('DYNAMODB_TABLE_NAME', 'movies')
 
-# --- BEFORE ---
-# BEFORE: Read CSV and write to DynamoDB with boto3
-import pandas as pd
-import boto3
-import logging
+# Initialize DynamoDB client (not resource) for manual type handling
+dynamodb = boto3.client("dynamodb")
 
-# Configure logging for BEFORE section
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-import logging
-
-# Configure logging for BEFORE section
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# Initialize DynamoDB resource and table
-dynamodb = boto3.resource("dynamodb")
-table = dynamodb.Table(DYNAMODB_TABLE_NAME)
-
-# Read movies CSV from S3 and limit to first 1000 rows
-df = pd.read_csv(f"s3://{S3_BUCKET_NAME}/movies.csv").head(1000)
+# Read movies CSV from S3 and limit to first 100 rows for demo
+df = pd.read_csv(f"s3://{S3_BUCKET_NAME}/movies.csv").head(100)
 
 # Extract year and clean title
-df['year'] = df['title'].str.extract(r'\((\d{4})\)')
+df['release_year'] = df['title'].str.extract(r'\((\d{4})\)')
 df['title'] = df['title'].str.replace(r'\s*\(\d{4}\).*$', '', regex=True)
 
 # Convert pipe-separated genres to list for better searchability
 df['genres'] = df['genres'].str.split('|')
 
-# Write to DynamoDB using batch operations with error handling
-# DynamoDB batch_write_item has a 25-item limit per request
-# batch_writer() automatically handles:
-# - Chunking 1000 items into ~40 batch requests (1000 ÷ 25)
-# - Retrying unprocessed items automatically
-# - Rate limiting and exponential backoff
-try:
-    with table.batch_writer() as batch:
-        for _, row in df.iterrows():
-            item = row.to_dict()
-            batch.put_item(Item=item)
-except Exception as e:
-    logger.info(f"Error writing to DynamoDB: {e}")
+# Manual individual writes with type conversion and error handling
+successful_writes = 0
+failed_writes = 0
+
+for _, row in df.iterrows():
+    try:
+        # Manual DynamoDB type conversion - required for each field
+        # DynamoDB requires explicit type annotations: S=String, N=Number, SS=StringSet
+        item = {
+            'movieId': {'S': str(row['movieId'])},           # String type
+            'title': {'S': str(row['title'])},               # String type  
+            'release_year': {'N': str(row['release_year'])}, # Number type (as string)
+            'genres': {'SS': row['genres']}                  # String Set type
+        }
+        
+        # Individual put_item call - no batching optimization
+        dynamodb.put_item(
+            TableName=DYNAMODB_TABLE_NAME,
+            Item=item
+        )
+        successful_writes += 1
+        
+        # Rate limiting to avoid throttling - manual delay between writes
+        time.sleep(0.01)  # 10ms delay between writes
+        
+    except ClientError as e:
+        failed_writes += 1
+        if e.response['Error']['Code'] == 'ProvisionedThroughputExceededException':
+            time.sleep(1)  # Back off on throttling
+        logger.error(f"Failed to write item {row['movieId']}: {e}")
+    except Exception as e:
+        failed_writes += 1
+        logger.error(f"Unexpected error for item {row['movieId']}: {e}")
+
+logger.info(f"Completed: {successful_writes} successful, {failed_writes} failed")
 
 # --- AFTER ---
 # AFTER: Read CSV and write to DynamoDB with awswrangler
@@ -62,11 +75,15 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Environment variables
+S3_BUCKET_NAME = os.environ.get('S3_BUCKET_NAME', 'demo-bucket-changeme')
+DYNAMODB_TABLE_NAME = os.environ.get('DYNAMODB_TABLE_NAME', 'movies')
+
 # Read movies CSV from S3 and limit to first 1000 rows
 df = wr.s3.read_csv(f"s3://{S3_BUCKET_NAME}/movies.csv").head(1000)
 
 # Extract year and clean title
-df['year'] = df['title'].str.extract(r'\((\d{4})\)')
+df['release_year'] = df['title'].str.extract(r'\((\d{4})\)')
 df['title'] = df['title'].str.replace(r'\s*\(\d{4}\).*$', '', regex=True)
 
 # Convert pipe-separated genres to list for better searchability

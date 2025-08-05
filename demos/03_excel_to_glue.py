@@ -1,20 +1,20 @@
 # BEFORE and AFTER example using AWS SDK for Pandas
 
-# Configuration - set these environment variables before running
-import os
-S3_BUCKET_NAME = os.environ.get('S3_BUCKET_NAME', 'demo-bucket-changeme')
-GLUE_DATABASE_NAME = os.environ.get('GLUE_DATABASE_NAME', 'company')
-
 # --- BEFORE ---
 # BEFORE: Read messy Excel, clean with jaconv, write manually
 import pandas as pd
 import jaconv
 import boto3
 import logging
+import os
 
 # Configure logging for BEFORE section
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Environment variables
+S3_BUCKET_NAME = os.environ.get('S3_BUCKET_NAME', 'demo-bucket-changeme')
+GLUE_DATABASE_NAME = os.environ.get('GLUE_DATABASE_NAME', 'company')
 
 # Read Excel file with Japanese text data
 df = pd.read_excel("employees.xlsx")
@@ -53,10 +53,15 @@ import pandas as pd
 import jaconv
 import awswrangler as wr
 import logging
+import os
 
 # Configure logging for AFTER section
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Environment variables
+S3_BUCKET_NAME = os.environ.get('S3_BUCKET_NAME', 'demo-bucket-changeme')
+GLUE_DATABASE_NAME = os.environ.get('GLUE_DATABASE_NAME', 'company')
 
 # Read Excel file with Japanese text data
 df = pd.read_excel("employees.xlsx")

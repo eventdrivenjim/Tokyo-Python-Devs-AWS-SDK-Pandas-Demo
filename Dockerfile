@@ -5,15 +5,19 @@
 
 # Build arguments (ARG) - available at build time only, not in running container
 # These define user/group settings and Python version for consistency
-# our user name/id for this container
-# the uid/gid will be matched as user in our task definition to 
-# restrict user in container
+# Our user name/id for this container
+# The uid/gid will be matched as user in our task definition to 
+# Restrict user in container
 ARG GID=1000
 ARG GROUP=app
 ARG UID=1000
 ARG USER=app
 ARG VIRTUAL_ENV=/usr/local/venv  # Virtual env location - /usr/local for system-wide packages
 ARG DOCKER_PYTHON_VERSION=3.11
+
+# Control dev dependency installation - defaults to false for production security
+# Set to true for demo/development: docker build --build-arg INCLUDE_DEV_DEPS=true
+ARG INCLUDE_DEV_DEPS=false
 
 # BUILDER STAGE: Install dependencies and compile packages
 # Use ECR Public instead of Docker Hub for better reliability and AWS integration
@@ -23,6 +27,7 @@ FROM public.ecr.aws/docker/library/python:${DOCKER_PYTHON_VERSION} AS builder
 # Import build arguments into this stage
 ARG VIRTUAL_ENV
 ARG DOCKER_PYTHON_VERSION
+ARG INCLUDE_DEV_DEPS
 
 # Create Python virtual environment at /usr/local/venv to isolate dependencies
 # Location choice: /usr/local is standard for system-wide installed software
@@ -41,9 +46,19 @@ COPY uv.lock .
 
 # Install packages using uv (ultra-fast Python package installer)
 # Extract and install dependencies directly without building project
-# We run as separate for debugging - image size is not a concern in the builder
+# We run as separate commands for debugging - image size is not a concern in the builder
+# NOTE: Including dev dependencies (--extra dev) for demo convenience only
+# Production containers should NOT include dev dependencies 
+# like awscli for security and size optimization
 RUN pip3 install uv 
-RUN uv export --format requirements-txt > requirements.txt
+
+# RUN uv export --format requirements-txt --extra dev > requirements.txt
+RUN if [ "$INCLUDE_DEV_DEPS" = "true" ]; then \
+        uv export --format requirements-txt --extra dev > requirements.txt; \
+    else \
+        uv export --format requirements-txt > requirements.txt; \
+    fi
+
 RUN uv pip install wheel
 RUN uv pip install -r requirements.txt
 RUN rm -rf *.egg-info/ pyproject.toml uv.lock requirements.txt
@@ -53,9 +68,9 @@ RUN rm -rf *.egg-info/ pyproject.toml uv.lock requirements.txt
 COPY demos/ .
 
 # Pre-compile our python packages to speed up initial hit
-# and that the final image is read-only
-# this is to ensure that we do not have to compile on first run
-# we do both our app and included packages
+# And that the final image is read-only
+# This is to ensure that we do not have to compile on first run
+# We do both our app and included packages
 RUN python -m compileall -q . && \
     python -m compileall -q ${VIRTUAL_ENV}/lib/python${DOCKER_PYTHON_VERSION}/site-packages
 
@@ -74,12 +89,11 @@ ARG VIRTUAL_ENV
 # Environment variables for runtime container
 ENV PATH="${VIRTUAL_ENV}/bin:${PATH}" 
 
-# this is to ensure that we do not have to wait for the buffer to fill
+# This is to ensure that we do not have to wait for the buffer to fill
 # before we see the output in our logs
 ENV PYTHONUNBUFFERED=1 
 
-# do not write bytecode to disk
-# this is to ensure that we do not have to write bytecode to disk
+# Do not write bytecode to disk
 ENV PYTHONDONTWRITEBYTECODE=1
 
 # Security: Create non-root user without shell access or home directory

@@ -28,24 +28,6 @@ df[['title', 'release_year']] = df['title'].str.extract(r'^(.*?)\s*\((\d{4})\)')
 
 # Handle invalid years gracefully - best practice for production code
 df['release_year'] = pd.to_numeric(df['release_year'], errors='coerce')
-initial_count = len(df)
-df = df.dropna(subset=['release_year'])  # Remove rows with invalid years
-dropped_count = initial_count - len(df)
-if dropped_count > 0:
-    logger.warning(f"Dropped {dropped_count} rows with invalid years")
-df['release_year'] = df['release_year'].astype(int)
-
-# Get current year for dynamic categorization
-current_year = datetime.now().year
-
-# Categorize by film era (>25 years = Classic)
-df['age_category'] = pd.cut(df['release_year'], 
-    bins=[1900, current_year-25, current_year+1], 
-    labels=['Classic', 'Modern'])
-
-# Mark remakes - True for later versions of same title, False for original
-# Unfortunately hollywood makes this too often
-df['is_remake'] = df.groupby('title')['release_year'].transform(lambda x: x != x.min())
 
 # Convert pipe-separated genres to list for better searchability
 # Athena can query arrays with contains() function: WHERE contains(genres, 'Action')
@@ -97,39 +79,11 @@ GLUE_DATABASE_NAME = os.environ.get('GLUE_DATABASE_NAME', 'demo-glue-catalog-cha
 # Read CSV from S3
 df = wr.s3.read_csv(f"s3://{S3_BUCKET_NAME}/movies.csv")
 
-# Extract clean title and release year, detect remakes
+# Extract clean title and release year
 df[['title', 'release_year']] = df['title'].str.extract(r'^(.*?)\s*\((\d{4})\)')
 
 # Handle invalid years gracefully - best practice for production code
 df['release_year'] = pd.to_numeric(df['release_year'], errors='coerce')
-initial_count = len(df)
-df = df.dropna(subset=['release_year'])  # Remove rows with invalid years
-dropped_count = initial_count - len(df)
-if dropped_count > 0:
-    logger.warning(f"Dropped {dropped_count} rows with invalid years")
-df['release_year'] = df['release_year'].astype(int)
-
-# Validate year range - removes movies outside 1900-2030 range
-# This filters out pre-1900 films, future dates, and data entry errors
-invalid_years = ~df['release_year'].between(1900, 2030)
-if invalid_years.any():
-    invalid_count = invalid_years.sum()
-    logger.warning(f"Found {invalid_count} movies with invalid years, filtering them out")
-    logger.warning(f"Invalid years: {df.loc[invalid_years, 'release_year'].unique()}")
-    df = df[~invalid_years]  # Keep only movies with years 1900-2030
-else:
-    logger.info("All release years are valid (1900-2030)")
-
-# Get current year for dynamic categorization
-current_year = datetime.now().year
-
-# Categorize by film era (>25 years = Classic)
-df['age_category'] = pd.cut(df['release_year'], 
-    bins=[1900, current_year-25, current_year+1], 
-    labels=['Classic', 'Modern'])
-
-# Mark remakes - True for later versions of same title, False for original
-df['is_remake'] = df.groupby('title')['release_year'].transform(lambda x: x != x.min())
 
 # Convert pipe-separated genres to list for better searchability
 # Athena can query arrays with contains() function: WHERE contains(genres, 'Action')

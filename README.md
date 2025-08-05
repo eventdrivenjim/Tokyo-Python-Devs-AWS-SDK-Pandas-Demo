@@ -183,12 +183,15 @@ AWS credentials are automatically mounted when using the Makefile commands.
    ```
    
    **Container Development:**
-   Environment variables are automatically loaded by the Makefile.
+   Environment variables must be loaded manually inside the container.
 
 **Container Development - Start Container:**
 ```bash
 # Start container with mounted files (automatically builds if needed)
 make shell
+
+# Load environment variables inside the container
+source .env
 
 # Your local directory is now mounted as /app in the container
 # Continue with infrastructure deployment inside the container
@@ -325,7 +328,7 @@ aws-wrangler-demos/
 
 1. **Install dependencies:**
    ```bash
-   pip install -e .
+   uv sync
    ```
 
 2. **AWS Configuration:**
@@ -336,9 +339,8 @@ aws-wrangler-demos/
 
 Use the provided Makefile for containerized development:
 
-1. **Build and run with Docker (default):**
+1. **Run with Docker (automatically builds if needed):**
    ```bash
-   make build
    make shell
    ```
 
@@ -346,7 +348,6 @@ Use the provided Makefile for containerized development:
    
    **Option A - Override per command:**
    ```bash
-   make build CONTAINER_ENGINE=podman
    make shell CONTAINER_ENGINE=podman
    ```
    
@@ -359,13 +360,11 @@ Use the provided Makefile for containerized development:
    ```
    Then use normal commands:
    ```bash
-   make build
    make shell
    ```
 
 3. **Available Makefile targets:**
-   - `make build` - Build the container image
-   - `make shell` - Run interactive shell with current directory mounted
+   - `make shell` - Run interactive shell with current directory mounted (automatically builds if needed)
    - `make inspect` - Run container for inspection
    - `make rm` - Remove stopped local container (cleanup)
 
@@ -382,8 +381,7 @@ Use the provided Makefile for containerized development:
 The project includes a Makefile for easy container management:
 
 **Available targets:**
-- `make build` - Build the container image from Dockerfile
-- `make shell` - Run interactive shell **with local files mounted** (for development)
+- `make shell` - Run interactive shell **with local files mounted** (automatically builds if needed)
 - `make inspect` - Run interactive shell **without local files** (simulates production/ECS)
 - `make rm` - Remove stopped local container (cleanup)
 
@@ -412,227 +410,6 @@ CONTAINER_ENGINE=podman
 - S3 bucket for data storage
 - Glue database (e.g., "movielens-demo")
 - DynamoDB table (e.g., "movies-demo")
-- Athena query result location
-
-## Key Benefits Demonstrated
-
-- **Reduced Code Complexity:** 10-20 lines vs 2-3 lines
-- **Automatic Error Handling:** Built-in retries and error management
-- **Type Conversion:** Automatic handling of AWS service data types
-- **Integration:** Seamless connection between AWS services
-- **Performance:** Optimized operations for large datasets
-
-## Running the Demos
-
-1. Update bucket names and table names in the code
-2. Ensure your AWS resources are created
-3. Run individual demo files to see the differences
-
-Each demo shows the manual complexity required with boto3/pandas versus the simplified approach with AWS SDK for Pandas.
-
-## Cleanup Resources
-
-**Important:** To avoid ongoing charges, delete all AWS resources after completing the demos.
-
-### Option 1: Delete CloudFormation Stack (Recommended)
-
-This removes all resources created by the template:
-
-```bash
-# First, empty the S3 bucket (required before stack deletion)
-aws s3 rm s3://${S3_BUCKET_NAME} --recursive
-
-# Then delete the entire stack and all its resources
-aws cloudformation delete-stack --stack-name wrangler-demo-stack
-
-# Monitor deletion progress
-aws cloudformation describe-stacks --stack-name wrangler-demo-stack
-```
-
-**Important:** S3 buckets cannot be deleted if they contain objects. You must empty the bucket first.
-
-**Note:** CloudFormation automatically deletes the DynamoDB table, Glue database, and all other resources - no manual cleanup needed.
-
-### Option 2: Manual Resource Cleanup
-
-#### S3 Bucket Cleanup
-
-**AWS Console:**
-1. Go to S3 Console → Select your bucket
-2. Click "Empty" → Type "permanently delete" → Confirm
-3. Click "Delete" → Type bucket name → Confirm
-
-**AWS CLI:**
-```bash
-# Remove all objects from bucket (CloudFormation will delete the empty bucket)
-aws s3 rm s3://${S3_BUCKET_NAME} --recursive
-```
-
-### Verify Cleanup
-
-Check that all resources are deleted:
-```bash
-# Check S3 buckets
-aws s3 ls
-
-# Check DynamoDB tables
-aws dynamodb list-tables
-
-# Check Glue databases
-aws glue get-databases
-
-# Check CloudFormation stacks
-aws cloudformation list-stacks --stack-status-filter CREATE_COMPLETE UPDATE_COMPLETE
-```
-
-## Connect
-
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/jimoneil)
-[![GitHub](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/yourusername/aws-wrangler-demos)
-
-## Project Structure
-
-```
-aws-wrangler-demos/
-├── demos/                        # Demo Python scripts and container files
-│   ├── 01_csv_to_parquet.py
-│   ├── 02_athena_query.py
-│   ├── 03_excel_to_glue.py
-│   ├── 04_dynamodb_write.py
-│   ├── 05_dynamodb_lookup.py
-│   ├── Dockerfile
-│   ├── .dockerignore             # Docker build context exclusions
-│   ├── requirements.txt          # Python dependencies (compiled)
-│   └── requirements.in           # Python dependencies (source)
-├── .env                          # Environment variables configuration
-├── .gitignore                    # Git ignore rules
-├── cloudformation_template.yaml  # AWS infrastructure template
-├── makefile                      # Container management commands
-└── README.md                     # This documentation
-```
-
-**Key directories:**
-- **`demos/`** - Contains all Python demo scripts and container configuration
-- **Root directory** - Infrastructure files (.env, CloudFormation, Makefile)
-
-### 01_csv_to_parquet.py
-**Purpose:** Convert CSV to partitioned Parquet and register with AWS Glue
-- **BEFORE:** Manual partitioning, S3 upload, and Glue registration
-- **AFTER:** Single function call handles everything
-
-### 02_athena_query.py
-**Purpose:** Query data with Amazon Athena and return results as DataFrame
-- **BEFORE:** Manual query execution, polling, and result retrieval
-- **AFTER:** Direct SQL query to DataFrame conversion
-
-### 03_excel_to_glue.py
-**Purpose:** Process Japanese Excel data and create partitioned Glue table
-- **BEFORE:** Manual text standardization, partitioning, and Glue registration
-- **AFTER:** Streamlined processing with automatic Glue integration
-
-### 04_dynamodb_write.py
-**Purpose:** Write DataFrame to DynamoDB table
-- **BEFORE:** Manual batch operations with error handling
-- **AFTER:** Direct DataFrame to DynamoDB conversion
-
-### 05_dynamodb_lookup.py
-**Purpose:** Lookup items from DynamoDB and export to Parquet
-- **BEFORE:** Manual key formatting, type conversion, and DataFrame creation
-- **AFTER:** Simple key-based lookup with automatic type handling
-
-## Prerequisites
-
-### Option 1: Local Installation
-
-1. **Install dependencies:**
-   ```bash
-   pip install -r demos/requirements.txt
-   ```
-
-2. **AWS Configuration:**
-   - Configure AWS credentials (`aws configure`)
-   - Ensure appropriate IAM permissions for S3, Glue, Athena, and DynamoDB
-
-### Option 2: Docker Container
-
-Use the provided Makefile for containerized development:
-
-1. **Build and run with Docker (default):**
-   ```bash
-   make build
-   make shell
-   ```
-
-2. **Or use Podman instead:**
-   
-   **Option A - Override per command:**
-   ```bash
-   make build CONTAINER_ENGINE=podman
-   make shell CONTAINER_ENGINE=podman
-   ```
-   
-   **Option B - Edit Makefile permanently:**
-   ```bash
-   # Change line 4 in Makefile from:
-   CONTAINER_ENGINE=docker
-   # To:
-   CONTAINER_ENGINE=podman
-   ```
-   Then use normal commands:
-   ```bash
-   make build
-   make shell
-   ```
-
-3. **Available Makefile targets:**
-   - `make build` - Build the container image
-   - `make shell` - Run interactive shell with current directory mounted
-   - `make inspect` - Run container for inspection
-   - `make rm` - Remove stopped local container (cleanup)
-
-**Container Features:**
-- Pre-installed dependencies from `demos/requirements.in`
-- AWS CLI pre-installed for infrastructure deployment
-- AWS region set to `ap-northeast-1` by default
-- Support for both Docker and Podman (change `CONTAINER_ENGINE` variable)
-
-**Note:** AWS CLI is included for demo convenience only. In production containers, use AWS SDKs (like awswrangler) instead of CLI tools for better security and smaller image size.
-
-### Makefile Commands
-
-The project includes a Makefile for easy container management:
-
-**Available targets:**
-- `make build` - Build the container image from Dockerfile
-- `make shell` - Run interactive shell **with local files mounted** (for development)
-- `make inspect` - Run interactive shell **without local files** (simulates production/ECS)
-- `make rm` - Remove stopped local container (cleanup)
-
-**Important distinction:**
-- **`make shell`** - Mounts your current directory to `/app` in the container
-  - Local file changes are immediately available in container
-  - Use this for running demos and development
-  - Your `.env` file and demo scripts are accessible
-
-- **`make inspect`** - Uses only files built into the container image
-  - No local directory mounting (simulates ECS/production deployment)
-  - Only files copied during `docker build` are available
-  - Use this to test production-like container behavior
-
-**Container Engine Support:**
-To use Podman instead of Docker, edit the Makefile:
-```makefile
-# Change line 4 from:
-CONTAINER_ENGINE=docker
-# To:
-CONTAINER_ENGINE=podman
-```
-
-### AWS Resources Required
-
-- S3 bucket for data storage
-- Glue database (e.g., "movielens", "company")
-- DynamoDB table (e.g., "movies")
 - Athena query result location
 
 ## Key Benefits Demonstrated

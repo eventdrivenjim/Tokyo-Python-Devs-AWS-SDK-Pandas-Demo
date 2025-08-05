@@ -62,26 +62,3 @@ df_1995 = wr.athena.read_sql_query(
     database=GLUE_DATABASE_NAME
 )
 
-# Example 2: Simple lookup by movieId
-# Basic equality search - same as traditional SQL
-df_movie = wr.athena.read_sql_query(
-    sql="SELECT movieId, title, genres, release_year FROM movies WHERE movieId = '1'",
-    database=GLUE_DATABASE_NAME
-)
-
-# Example 3: Search by genre using array functions
-# Before: genres LIKE '%Action%' (inaccurate string matching)
-# After: contains(genres, 'Action') (proper array search)
-# Note: contains() is case-sensitive - MovieLens uses proper case (Action, Comedy, Sci-Fi)
-df_action = wr.athena.read_sql_query(
-    sql="SELECT title, genres, release_year, age_category FROM movies WHERE contains(genres, 'Action')",
-    database=GLUE_DATABASE_NAME
-)
-
-# Example 4: Multiple genre search
-# Find movies that are both Action AND Comedy
-df_multi_genre = wr.athena.read_sql_query(
-    sql="""SELECT title, genres, release_year FROM movies 
-           WHERE contains(genres, 'Action') AND contains(genres, 'Comedy')""",
-    database=GLUE_DATABASE_NAME
-)
