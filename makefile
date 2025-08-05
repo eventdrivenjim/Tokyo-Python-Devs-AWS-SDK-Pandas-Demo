@@ -3,8 +3,11 @@
 # Common targets: build, shell, inspect, clean
 
 # Container configuration
-NS = local                    # Namespace for image tagging
-VERSION ?= latest            # Image version (can be overridden)
+# Namespace for image tagging
+NS = local
+
+# Image version (can be overridden)
+VERSION ?= latest
 
 # Container engine - change to podman if preferred
 CONTAINER_ENGINE=docker
@@ -13,19 +16,24 @@ CONTAINER_ENGINE=docker
 INCLUDE_DEV_DEPS ?= true     # Include dev dependencies (awscli) - set to false for production
 
 # Container naming
-REPO = wrangler-demo         # Repository name for the image
-NAME = wrangler-demo         # Container name when running
+# Repository name for the image
+REPO = wrangler-demo
+# Container name when running
+NAME = wrangler-demo
 
-INSTANCE = default           # Instance identifier for multiple containers
+# Instance identifier for multiple containers
+INSTANCE = default
 
 # Runtime environment variables
 ENV = \
 	-e AWS_DEFAULT_REGION=ap-northeast-1
 
 # Volume mounts for container
+# Mount AWS credentials (read-only)
+# Mount current directory to /app
 VOLUMES= \
-  -v $(HOME)/.aws:/home/app/.aws:ro \  # Mount AWS credentials (read-only)
-  -v $(PWD):/app                   # Mount current directory to /app
+  -v $(HOME)/.aws:/home/app/.aws:ro \
+  -v $(PWD):/app
 
 # Declare phony targets (not files)
 .PHONY: help build shell inspect clean rm status
