@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 
 # Environment variables
 S3_BUCKET_NAME = os.environ.get('S3_BUCKET_NAME', 'demo-bucket-changeme')
-GLUE_DATABASE_NAME = os.environ.get('GLUE_DATABASE_NAME', 'company')
 
 # Read Excel file with Japanese text data
 df = pd.read_excel("employees.xlsx")
@@ -30,7 +29,7 @@ for department, group in df.groupby('department'):
 # Define schema, partition keys, and Parquet format specifications
 glue = boto3.client("glue")
 glue.create_table(
-    DatabaseName=GLUE_DATABASE_NAME,
+    DatabaseName="employees",
     TableInput={
         "Name": "employees",
         "StorageDescriptor": {

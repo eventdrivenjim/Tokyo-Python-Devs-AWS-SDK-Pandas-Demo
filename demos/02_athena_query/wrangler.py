@@ -13,7 +13,7 @@ ATHENA_RESULT_LOCATION = os.environ.get('ATHENA_RESULT_LOCATION')
 
 # Example 1: Original query - movies from 1995
 # Matches the BEFORE example for direct comparison
-df_1995 = wr.athena.read_sql_query(
+df = wr.athena.read_sql_query(
     sql="SELECT title, genres FROM movies WHERE release_year = 1995",
     database=GLUE_DATABASE_NAME
 )
