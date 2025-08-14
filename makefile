@@ -36,24 +36,30 @@ VOLUMES= \
   -v $(PWD):/app
 
 # Declare phony targets (not files)
-.PHONY: help build shell inspect clean rm status
+.PHONY: help build-local build-runtime shell inspect clean rm status
 
 # Default target - show help
 .DEFAULT_GOAL := help
 
 # Build image with configurable dev dependencies
 # Override with: make build INCLUDE_DEV_DEPS=false
-build:
+build-local:
 	$(CONTAINER_ENGINE) build --no-cache \
 		--build-arg INCLUDE_DEV_DEPS=$(INCLUDE_DEV_DEPS) \
+		--target dev-tools \
+		-t $(NS)/$(REPO):$(VERSION) .
+
+build-runtime:
+	$(CONTAINER_ENGINE) build --no-cache \
+		--target runtime \
 		-t $(NS)/$(REPO):$(VERSION) .
 
 # Run interactive shell with local files mounted (development mode)
-shell: build
-	$(CONTAINER_ENGINE) run --rm --name $(NAME)-$(INSTANCE) -i -t $(PORTS) $(VOLUMES) $(ENV) $(NS)/$(REPO):$(VERSION) /bin/bash
+shell: build-local
+	$(CONTAINER_ENGINE) run --rm  --name $(NAME)-$(INSTANCE) -i -t $(PORTS) $(VOLUMES) $(ENV) $(NS)/$(REPO):$(VERSION) /bin/bash
 
 # Run interactive shell without local files (simulates production deployment)
-inspect: build
+inspect: build-runtime
 	$(CONTAINER_ENGINE) run --rm --name $(NAME)-$(INSTANCE) -i -t $(PORTS) $(ENV) $(NS)/$(REPO):$(VERSION) /bin/bash
 
 # Clean up images and containers
@@ -75,7 +81,7 @@ help:
 	@echo "Usage: make <target>"
 	@echo ""
 	@echo "Available targets:"
-	@echo "  build      - Build image with dev dependencies (override: INCLUDE_DEV_DEPS=false)"
+	@echo "  build-local      - Build image with dev dependencies (override: INCLUDE_DEV_DEPS=false)"
 	@echo "  shell      - Run interactive shell with local files mounted (development)"
 	@echo "  inspect    - Run interactive shell without local files (production-like)"
 	@echo "  status     - Show running containers"

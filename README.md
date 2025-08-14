@@ -273,28 +273,28 @@ These demos show the power of [awswrangler](https://github.com/aws/aws-sdk-panda
 aws-wrangler-demos/
 ├── demos/                              # Demo comparisons organized by use case
 │   ├── 01_csv_to_parquet/             # CSV to Parquet with Glue registration
-│   │   ├── boto3.py                   # BEFORE: Manual approach
+│   │   ├── boto3_version.py           # BEFORE: Manual approach
 │   │   ├── wrangler.py                # AFTER: awswrangler approach
 │   │   └── README.md                  # Demo-specific documentation
 │   ├── 02_athena_query/               # Athena query execution
-│   │   ├── boto3.py                   # BEFORE: Manual polling
+│   │   ├── boto3_version.py           # BEFORE: Manual polling
 │   │   ├── wrangler.py                # AFTER: Direct SQL to DataFrame
 │   │   └── README.md
 │   ├── 03_excel_to_glue/              # Excel processing with Japanese text
-│   │   ├── boto3.py                   # BEFORE: Complex processing
+│   │   ├── boto3_version.py           # BEFORE: Complex processing
 │   │   ├── wrangler.py                # AFTER: Streamlined workflow
 │   │   ├── employees.csv              # Sample Japanese data
 │   │   └── README.md
 │   ├── 04_dynamodb_write/             # DynamoDB batch write operations
-│   │   ├── boto3.py                   # BEFORE: Manual type conversion
+│   │   ├── boto3_version.py           # BEFORE: Manual type conversion
 │   │   ├── wrangler.py                # AFTER: Direct DataFrame write
 │   │   └── README.md
 │   ├── 05_dynamodb_lookup/            # DynamoDB batch lookup operations
-│   │   ├── boto3.py                   # BEFORE: Complex type handling
+│   │   ├── boto3_version.py           # BEFORE: Complex type handling
 │   │   ├── wrangler.py                # AFTER: Simple key lookup
 │   │   └── README.md
 │   └── 06_athena_to_dynamodb_etl/     # Complete ETL pipeline
-│       ├── boto3.py                   # BEFORE: Multi-step manual ETL
+│       ├── boto3_version.py           # BEFORE: Multi-step manual ETL
 │       ├── wrangler.py                # AFTER: 2-function pipeline
 │       └── README.md
 ├── .env                               # Environment variables configuration
@@ -309,37 +309,37 @@ aws-wrangler-demos/
 
 **Key directories:**
 - **`demos/`** - Self-contained demo comparisons with BEFORE/AFTER examples
-- **Each demo folder** - Contains boto3.py (manual approach) vs wrangler.py (simplified approach)
+- **Each demo folder** - Contains boto3_version.py (manual approach) vs wrangler.py (simplified approach)
 - **Root directory** - Infrastructure files (.env, CloudFormation, Makefile, Docker)
 
 ### Demo 01: CSV to Parquet Conversion
 **Purpose:** Convert CSV to partitioned Parquet and register with AWS Glue
-- **boto3.py:** Manual partitioning, S3 upload, and Glue registration (~40 lines)
+- **boto3_version.py:** Manual partitioning, S3 upload, and Glue registration (~40 lines)
 - **wrangler.py:** Single function call handles everything (~3 lines)
 
 ### Demo 02: Athena Query Execution
 **Purpose:** Query data with Amazon Athena and return results as DataFrame
-- **boto3.py:** Manual query execution, polling, and result retrieval (~15 lines)
+- **boto3_version.py:** Manual query execution, polling, and result retrieval (~15 lines)
 - **wrangler.py:** Direct SQL query to DataFrame conversion (1 function call)
 
 ### Demo 03: Excel Processing with Japanese Text
 **Purpose:** Process Japanese Excel data and create partitioned Glue table
-- **boto3.py:** Manual text standardization, partitioning, and Glue registration (~35 lines)
+- **boto3_version.py:** Manual text standardization, partitioning, and Glue registration (~35 lines)
 - **wrangler.py:** Streamlined processing with automatic Glue integration (~15 lines)
 
 ### Demo 04: DynamoDB Batch Write
 **Purpose:** Write DataFrame to DynamoDB table
-- **boto3.py:** Manual individual writes with complex type conversion (~40 lines)
+- **boto3_version.py:** Manual individual writes with complex type conversion (~40 lines)
 - **wrangler.py:** Direct DataFrame to DynamoDB conversion (1 function call)
 
 ### Demo 05: DynamoDB Batch Lookup
 **Purpose:** Lookup items from DynamoDB and export to Parquet
-- **boto3.py:** Manual key formatting, type conversion, and DataFrame creation (~25 lines)
+- **boto3_version.py:** Manual key formatting, type conversion, and DataFrame creation (~25 lines)
 - **wrangler.py:** Simple key-based lookup with automatic type handling (1 function call)
 
 ### Demo 06: Athena to DynamoDB ETL
 **Purpose:** ETL pipeline from Athena analytical queries to DynamoDB for fast operational lookups
-- **boto3.py:** Manual Athena query execution, result processing, and DynamoDB batch writes (~50 lines)
+- **boto3_version.py:** Manual Athena query execution, result processing, and DynamoDB batch writes (~50 lines)
 - **wrangler.py:** Streamlined ETL with automatic query execution and data transfer (2 function calls)
 
 ## Prerequisites

@@ -1,37 +1,49 @@
+# Build system configuration for Python packaging
 [build-system]
-requires = ["setuptools>=78.1.1", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["setuptools>=78.1.1", "wheel"]  # Modern setuptools with PEP 621 support
+build-backend = "setuptools.build_meta"      # Standard setuptools backend
 
+# Project metadata and core dependencies
 [project]
 name = "aws-wrangler-demos"
 version = "0.3.0"
 description = "BEFORE/AFTER examples demonstrating AWS SDK for Pandas (awswrangler) vs boto3"
-requires-python = "==3.11.*"
+requires-python = "==3.11.*"  # Pin to Python 3.11.x for consistency
+
+# Core dependencies required for all demos
 dependencies = [
-    "awswrangler",
-    "boto3",
-    "jaconv",
-    "openpyxl",
-    "pip-audit",
-    "requests",
-    "setuptools>=78.1.1",
+  "awswrangler",  # AWS SDK for Pandas - main library being demonstrated
+  "boto3",        # AWS SDK for Python - used in BEFORE examples
+  "jaconv",       # Japanese text conversion for demo 03
+  "openpyxl",     # Excel file processing for demo 03
+  "requests",       # HTTP library for general use
+  "fsspec",
+  "s3fs"
 ]
 
+# Optional dependency groups for different use cases
 [project.optional-dependencies]
+
+# Development tools (not recommended for production containers)
 dev = [
-    "awscli==1.42.1",  # Not recommended for production
-]
-database = [
-    "awswrangler[redshift]",
-    "awswrangler[mysql]",
-    "awswrangler[postgres]",
-    "awswrangler[oracle]",
-    "awswrangler[sqlserver]",
-]
-extras = [
-    "awswrangler[opensearch]",
-    "awswrangler[deltalake]",
+  "pip-audit"  # Security vulnerability scanner for dependencies
 ]
 
-[tool.pip-tools]
-generate-hashes = true
+# Database connectivity extensions for awswrangler
+database = [
+  "awswrangler[redshift]",    # Amazon Redshift support
+  "awswrangler[mysql]",       # MySQL database support
+  "awswrangler[postgres]",    # PostgreSQL database support
+  "awswrangler[oracle]",      # Oracle database support
+  "awswrangler[sqlserver]"    # SQL Server database support
+]
+
+# Search and analytics extensions
+search = [
+  "awswrangler[opensearch]"  # Amazon OpenSearch support
+]
+
+# Data lake and advanced analytics extensions
+datalake = [
+  "awswrangler[deltalake]"   # Delta Lake format support
+]

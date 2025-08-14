@@ -2,6 +2,7 @@
 import awswrangler as wr
 import logging
 from datetime import datetime
+import os
 
 # Configure logging for AFTER section
 logging.basicConfig(level=logging.INFO)

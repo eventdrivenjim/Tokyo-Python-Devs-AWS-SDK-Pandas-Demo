@@ -1,6 +1,7 @@
 # AFTER: Read CSV and write to DynamoDB with awswrangler
 import awswrangler as wr
 import logging
+import os
 
 # Configure logging for AFTER section
 logging.basicConfig(level=logging.INFO)
